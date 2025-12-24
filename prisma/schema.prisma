@@ -20,7 +20,7 @@ model Apartment {
   phone     String
   email     String?
   lineId    String?
-  txtCode   String?
+  taxCode   String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 }
