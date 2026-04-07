@@ -32,4 +32,20 @@ model RoomType {
   status String @default("active")  
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
+  rooms Room[]
+}
+
+model Room {
+  id String @id @default(uuid())
+  name String
+  towerName String
+  totalLevel Int
+  totalRoom Int
+  roomTypeId String
+  roomType RoomType @relation(fields: [roomTypeId], references: [id])
+  remark String?
+  status String @default("active") // active or inactive
+  statusEmpty String @default("empty") // empty or occupied
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 }

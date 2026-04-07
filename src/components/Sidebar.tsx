@@ -23,6 +23,12 @@ export default function Sidebar() {
               <span>ประเภทห้อง</span>
             </Link>
           </li>
+          <li>
+            <Link href="/home/room" className="flex items-center gap-2">
+              <i className="fa-solid fa-box w-[28px]"></i>
+              <span>ห้องพัก</span>
+            </Link>
+          </li>
         </ul>
       </nav>
     </div>
