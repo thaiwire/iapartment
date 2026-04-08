@@ -15,7 +15,7 @@ export default function RoomPage() {
   const [roomTypeId, setRoomTypeId] = useState("");
   const [filterRoomTypeId, setFilterRoomTypeId] = useState("");
   const [id, setId] = useState("");
-  const [isOpen, setIslOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
   const [totalRoom, setTotalRoom] = useState(0);
   const [towerName, setTowerName] = useState("");
   const [totalLevel, setTotalLevel] = useState(0);
@@ -27,18 +27,25 @@ export default function RoomPage() {
   useEffect(() => {
     if (roomTypes.length > 0) {
       setRoomTypeId(roomTypes[0].id);
+
+      console.log("roomTypes[0].id:", roomTypes[0].id);
+
       setFilterRoomTypeId(roomTypes[0].id);
+
     }
   }, [roomTypes]);
 
   useEffect(() => {
     if (filterRoomTypeId) {
+    //  console.log("filterRoomTypeId changed:", filterRoomTypeId);
       fetchdata();
     }
   }, [filterRoomTypeId]);
 
   const fetchdata = async () => {
     try {
+      console.log("Fetching rooms with filterRoomTypeId:", filterRoomTypeId);
+
       const response = await axios.get("/api/room/list/" + filterRoomTypeId);
       setRooms(response.data);
     } catch (error) {
@@ -54,6 +61,7 @@ export default function RoomPage() {
     try {
       const response = await axios.get("/api/room-type");
       setRoomTypes(response.data);
+      console.log("roomTypes:", response.data);
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -88,7 +96,7 @@ export default function RoomPage() {
         });
       }
       return fetchdata();
-      setIslOpen(false);
+      setIsOpen(false);
       clearForm();
     } catch (error) {
       Swal.fire({
@@ -103,14 +111,14 @@ export default function RoomPage() {
     setTowerName("");
     setTotalLevel(0);
     setTotalRoom(0);
-    setRoomTypeId(roomTypes[0].id);
+    setRoomTypeId(roomTypes[0]?.id);
   };
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">จัดการห้องพัก</h1>
       <Button
         onClick={() => {
-          setIslOpen(true);
+          setIsOpen(true);
           clearForm();
         }}
         variant="default"
@@ -138,7 +146,7 @@ export default function RoomPage() {
           <div
             key={room.id}
             className={`p-2 rounded-md shadow-lg border border-gray-400
-              ${room.status == "empty" ? "bg-green-200" : "bg-red-200"}`}
+              ${room.status == "active" ? "bg-green-200" : "bg-red-200"}`}
           >
             <div className="text-xl font-semibold">{room.name}</div>
             <div>{room.roomType.name}</div>
@@ -149,6 +157,7 @@ export default function RoomPage() {
               </span>
             </div>
             <div>
+              { room.status == "active" ? (
               <Button
                 variant="destructive"
                 onClick={async () => {
@@ -175,50 +184,50 @@ export default function RoomPage() {
               >
                 ลบ
               </Button>
+              ) : (
+               <Button
+                variant="default"
+                onClick={async () => {
+                  const buttonConfirm = await Swal.fire({
+                    title: "Are you sure?",
+                    text: "You want to reactivate this room!",
+                    showCancelButton: true,
+                    showConfirmButton: true,
+                    confirmButtonColor: "#3085d6",
+                    cancelButtonColor: "#d33",
+                    confirmButtonText: "Yes, reactivate it!"
+                  })
+                  if (buttonConfirm.isConfirmed) {
+                    await axios.put(`/api/room/` + room.id)
+                    Swal.fire({
+                      icon: "success",
+                      title: "Success",
+                      text: "Room reactivated successfully",
+                    });
+                    fetchdata();
+                  };
+                }}
+               >
+                เปิดใช้งาน
+               </Button>
+              )}
             </div>
           </div>
         ))}
       </div>
       <Modal
         isOpen={isOpen}
-        onClose={() => setIslOpen(false)}
+        onClose={() => setIsOpen(false)}
         title={id ? "แก้ไขข้อมูลห้องพัก" : "เพิ่มข้อมูลห้องพัก"}
         size="md"
       >
         <form onSubmit={handleSave} className="space-y-4">
-          <div className="mb-3">
-            <label>ชื่ออาคาร</label>
-            <input
-              type="text"
-              value={towerName}
-              onChange={(e) => setTowerName(e.target.value)}
-              className="input-modal"
-            />
-          </div>
-          <div className="mb-3">
-            <label>จำนวนชั้น</label>
-            <input
-              type="text"
-              value={totalLevel}
-              onChange={(e) => setTotalLevel(Number(e.target.value))}
-              className="input-modal"
-            />
-          </div>
-          <div className="mb-3">
-            <label>จำนวนห้อง</label>
-            <input
-              type="text"
-              value={totalRoom}
-              onChange={(e) => setTotalRoom(Number(e.target.value))}
-              className="input-modal"
-            />
-          </div>
-          <div className="mb-3">
-            <label>ประเภทห้อง</label>
+          <div>
+            <label>ประเภทห้องพัก</label>
             <select
+              className="input-modal"
               value={roomTypeId}
               onChange={(e) => setRoomTypeId(e.target.value)}
-              className="input-modal"
             >
               {roomTypes.map((roomType) => (
                 <option key={roomType.id} value={roomType.id}>
@@ -227,14 +236,42 @@ export default function RoomPage() {
               ))}
             </select>
           </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setIslOpen(false)}>Cancel</Button>
-            <Button type="submit" variant="default"
-            
-            >
-              Save
-            </Button>
+          <div className="flex gap-4 mt-3">
+            <div>
+              <label>ตึก</label>
+              <input
+                type="text"
+                className="input-modal"
+                value={towerName}
+                onChange={(e) => setTowerName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>จำนวนชั้น</label>
+              <input
+                type="number"
+                className="input-modal"
+                value={totalLevel}
+                onChange={(e) => setTotalLevel(Number(e.target.value))}
+                required
+              />
+            </div>
+            <div>
+              <label>จำนวนห้องต่อชั้น</label>
+              <input
+                type="number"
+                className="input-modal"
+                value={totalRoom}
+                onChange={(e) => setTotalRoom(Number(e.target.value))}
+                required
+              />
+            </div>
           </div>
+          <Button type="submit" variant="default" className="mt-3">
+            <i className="fa-solid fa-floppy-disk mr-2"></i>
+            บันทึก
+          </Button>
         </form>
       </Modal>
     </div>

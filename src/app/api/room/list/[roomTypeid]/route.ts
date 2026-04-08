@@ -6,15 +6,17 @@ import { z } from "zod";
 
 export async function GET(
   req: Request,
-  { params }: { params: { roomTypeid: string } },
+  { params }: { params: Promise<{ roomTypeid: string }> },
 ) {
-  const { roomTypeid } = params;
-  
+  const { roomTypeid } = await params;
+
+  console.log("Received roomTypeid:", roomTypeid);
+
   const rooms = await prisma.room.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: { name: "asc" },
     include: { roomType: true },
     where: {
-      status: "active",
+      // status: "active",
       roomTypeId: roomTypeid,
     },
   });
