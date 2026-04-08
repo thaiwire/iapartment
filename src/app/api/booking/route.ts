@@ -21,9 +21,38 @@ export async function POST(request: Request) {
       stayTo: z.string(),
       status: z.string(),
     });
-    
 
+    const {
+      customerName,
+      customerPhone,
+      customerAddress,
+      cardId,
+      gender,
+      roomId,
+      remark,
+      deposit,
+      stayAt,
+      stayTo,
+      status,
+    } = schema.parse(body);
 
+    const booking = await prisma.booking.create({
+      data: {
+        customerName : customerName,
+        customerPhone : customerPhone,
+        customerAddress : customerAddress,
+        cardId : cardId,
+        gender : gender,
+        roomId : roomId,
+        remark : remark,
+        deposit : deposit,
+        stayAt : new Date(),
+        stayTo : new Date(),
+        status : "active",
+      },
+    });
+
+    return NextResponse.json(booking, { status: 201 });
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error)?.message || "Failed to create booking" },

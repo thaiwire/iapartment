@@ -20,6 +20,20 @@ export default function RoomPage() {
   const [towerName, setTowerName] = useState("");
   const [totalLevel, setTotalLevel] = useState(0);
 
+  // booking
+  const [selectRoomId, setSelectRoomId] = useState("");
+  const [isOpenBooking, setIsOpenBooking] = useState(false);
+  const [bookingId, setBookingId] = useState("");
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [cardId, setCardId] = useState("");
+  const [gender, setGender] = useState("");
+  const [remark, setRemark] = useState("");
+  const [deposit, setDeposit] = useState(0);
+  const [stayAt, setStayAt] = useState(new Date());
+  const [stayTo, setStayTo] = useState(new Date());
+
   useEffect(() => {
     fetchRoomTypes();
   }, []);
@@ -31,13 +45,12 @@ export default function RoomPage() {
       console.log("roomTypes[0].id:", roomTypes[0].id);
 
       setFilterRoomTypeId(roomTypes[0].id);
-
     }
   }, [roomTypes]);
 
   useEffect(() => {
     if (filterRoomTypeId) {
-    //  console.log("filterRoomTypeId changed:", filterRoomTypeId);
+      //  console.log("filterRoomTypeId changed:", filterRoomTypeId);
       fetchdata();
     }
   }, [filterRoomTypeId]);
@@ -113,6 +126,53 @@ export default function RoomPage() {
     setTotalRoom(0);
     setRoomTypeId(roomTypes[0]?.id);
   };
+
+  const handleBooking = async (form: React.FormEvent<HTMLFormElement>) => {
+    form.preventDefault(); // Prevent refresh page
+    try {
+      const payload = {
+        customerName: customerName,
+        customerPhone: customerPhone,
+        customerAddress: customerAddress,
+        cardId: cardId,
+        gender: gender,
+        roomId: selectRoomId,
+        remark: remark,
+        deposit: deposit,
+        stayAt: stayAt,
+        stayTo: stayTo,
+      };
+
+      await axios.post("/api/booking", payload);
+      Swal.fire({
+        icon: "success",
+        title: "Success",
+        text: "Booking created successfully",
+      });
+      setIsOpenBooking(false);
+      clearBookingForm();
+      fetchdata();
+    } catch (error) {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: (error as Error).message || "Failed to save booking",
+      });
+    }
+  };
+
+  const clearBookingForm = () => {
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerAddress("");
+    setCardId("");
+    setGender("");
+    setRemark("");
+    setDeposit(0);
+    setStayAt(new Date());
+    setStayTo(new Date());
+  };
+
   return (
     <div>
       <h1 className="text-2xl font-bold mb-4">จัดการห้องพัก</h1>
@@ -157,59 +217,71 @@ export default function RoomPage() {
               </span>
             </div>
             <div>
-              { room.status == "active" ? (
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  const buttonConfirm = await Swal.fire({
-                    title: "Are you sure?",
-                    text: "You won't be able to revert this!",
-                    showCancelButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "Yes, delete it!",
-                  });
-                  if (!buttonConfirm.isConfirmed) return;
+              {room.status == "active" ? (
+                <>
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-800"
+                    onClick={() => {
+                      setSelectRoomId(room.id);
+                      setIsOpenBooking(true);
+                    }}
+                  >
+                    <i className="fa-solid fa-bed mr-2"></i>
+                    ผู้เข้าพัก
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    onClick={async () => {
+                      const buttonConfirm = await Swal.fire({
+                        title: "Are you sure?",
+                        text: "You won't be able to revert this!",
+                        showCancelButton: true,
+                        confirmButtonColor: "#3085d6",
+                        cancelButtonColor: "#d33",
+                        confirmButtonText: "Yes, delete it!",
+                      });
+                      if (!buttonConfirm.isConfirmed) return;
 
-                  if (buttonConfirm.isConfirmed) {
-                    await axios.delete(`/api/room/` + room.id);
-                    Swal.fire({
-                      icon: "success",
-                      title: "Success",
-                      text: "Room deleted successfully",
-                    });
-                    fetchdata();
-                  }
-                }}
-              >
-                ลบ
-              </Button>
+                      if (buttonConfirm.isConfirmed) {
+                        await axios.delete(`/api/room/` + room.id);
+                        Swal.fire({
+                          icon: "success",
+                          title: "Success",
+                          text: "Room deleted successfully",
+                        });
+                        fetchdata();
+                      }
+                    }}
+                  >
+                    ลบ
+                  </Button>
+                </>
               ) : (
-               <Button
-                variant="default"
-                onClick={async () => {
-                  const buttonConfirm = await Swal.fire({
-                    title: "Are you sure?",
-                    text: "You want to reactivate this room!",
-                    showCancelButton: true,
-                    showConfirmButton: true,
-                    confirmButtonColor: "#3085d6",
-                    cancelButtonColor: "#d33",
-                    confirmButtonText: "Yes, reactivate it!"
-                  })
-                  if (buttonConfirm.isConfirmed) {
-                    await axios.put(`/api/room/` + room.id)
-                    Swal.fire({
-                      icon: "success",
-                      title: "Success",
-                      text: "Room reactivated successfully",
+                <Button
+                  variant="default"
+                  onClick={async () => {
+                    const buttonConfirm = await Swal.fire({
+                      title: "Are you sure?",
+                      text: "You want to reactivate this room!",
+                      showCancelButton: true,
+                      showConfirmButton: true,
+                      confirmButtonColor: "#3085d6",
+                      cancelButtonColor: "#d33",
+                      confirmButtonText: "Yes, reactivate it!",
                     });
-                    fetchdata();
-                  };
-                }}
-               >
-                เปิดใช้งาน
-               </Button>
+                    if (buttonConfirm.isConfirmed) {
+                      await axios.put(`/api/room/` + room.id);
+                      Swal.fire({
+                        icon: "success",
+                        title: "Success",
+                        text: "Room reactivated successfully",
+                      });
+                      fetchdata();
+                    }
+                  }}
+                >
+                  เปิดใช้งาน
+                </Button>
               )}
             </div>
           </div>
