@@ -55,7 +55,7 @@ model Booking {
   id String @id @default(uuid())  
   customerName String
   customerPhone String
-  customerAddrsss String?
+  customerAddress String?
   cardId String?
   gender String? @default("male")
   roomId String
@@ -67,4 +67,16 @@ model Booking {
   stayAt DateTime
   stayto DateTime?
   deposit Int @default(0)
+  electcitylogs ElectcityLog[]
 }
+
+model ElectcityLog {
+  id String @id @default(uuid())
+  bookingId String
+  booking Booking @relation(fields: [bookingId], references: [id])
+  electricityUnit Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now()) 
+}
+
+

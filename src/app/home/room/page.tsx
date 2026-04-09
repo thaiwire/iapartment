@@ -8,6 +8,7 @@ import RoomTypeInterface from "@/interface/RoomTypeInterface";
 import Button from "@/components/button";
 import Modal from "@/src/components/ui/modal";
 import { set } from "zod";
+import dayjs from "dayjs";
 
 export default function RoomPage() {
   const [rooms, setRooms] = useState<RoomInterface[]>([]);
@@ -32,7 +33,8 @@ export default function RoomPage() {
   const [remark, setRemark] = useState("");
   const [deposit, setDeposit] = useState(0);
   const [stayAt, setStayAt] = useState(new Date());
-  const [stayTo, setStayTo] = useState(new Date());
+  const [stayTo, setStayTo] = useState<Date | null>(null);
+  const [roomId, setRoomId] = useState("");
 
   useEffect(() => {
     fetchRoomTypes();
@@ -54,6 +56,30 @@ export default function RoomPage() {
       fetchdata();
     }
   }, [filterRoomTypeId]);
+
+  useEffect(() => {
+    if (selectRoomId) {
+      console.log("selectRoomId changed:", selectRoomId);
+      const lastBooking = rooms.find((room) => room.id === selectRoomId)
+        ?.bookings?.[0];
+      if (lastBooking) {
+        setCustomerName(lastBooking.customerName);
+        setCustomerPhone(lastBooking.customerPhone);
+        setCustomerAddress(lastBooking.customerAddress);
+        setCardId(lastBooking.cardId);
+        setGender(lastBooking.gender);
+        setRemark(lastBooking.remark || "");
+        setDeposit(lastBooking.deposit);
+        setStayAt(new Date(lastBooking.stayAt));
+        if (lastBooking.stayTo) {
+          setStayTo(lastBooking.stayTo);
+        } 
+        setRemark(lastBooking.remark || "");
+        setRoomId(lastBooking.roomId);
+       
+      }
+    }
+  }, [selectRoomId]);
 
   const fetchdata = async () => {
     try {
@@ -206,7 +232,8 @@ export default function RoomPage() {
           <div
             key={room.id}
             className={`p-2 rounded-md shadow-lg border border-gray-400
-              ${room.status == "active" ? "bg-green-200" : "bg-red-200"}`}
+              ${room.status == "active" ? "bg-green-200" : "bg-red-200"}
+              ${room.statusEmpty == "no" ? "hover:bg-red-100" : "hover:bg-green-300"}`}
           >
             <div className="text-xl font-semibold">{room.name}</div>
             <div>{room.roomType.name}</div>
@@ -216,6 +243,18 @@ export default function RoomPage() {
                 {room.roomType.price.toLocaleString()} บาท
               </span>
             </div>
+            {room.statusEmpty == "no" ? (
+              <div className="text-red-500 font-bold">
+                <i className="fa-solid fa-xmark mr-2"></i>
+                ห้องเต็ม
+              </div>
+            ) : (
+              <div className="text-green-600 font-bold">
+                <i className="fa-solid fa-check mr-2"></i>
+                ห้องว่าง
+              </div>
+            )}
+
             <div>
               {room.status == "active" ? (
                 <>
@@ -344,6 +383,142 @@ export default function RoomPage() {
             <i className="fa-solid fa-floppy-disk mr-2"></i>
             บันทึก
           </Button>
+        </form>
+      </Modal>
+
+      <Modal
+        title="ผู้เข้าพัก"
+        isOpen={isOpenBooking}
+        onClose={() => setIsOpenBooking(false)}
+        size="md"
+      >
+        <form onSubmit={handleBooking} className="flex flex-col space-y-4">
+          <div className="flex flex-col gap-2">
+            <div>
+              <div>ห้องที่จอง</div>
+              <input
+                type="text"
+                className="bg-blue-200 px-4 py-2 rounded-md w-full border border-gray-600"
+                value={
+                  rooms.find((room) => room.id === selectRoomId)?.name || ""
+                }
+                //value ={selectRoomId}
+                disabled
+              />
+            </div>
+            <div>
+              <label>ชื่อผู้เข้าพัก</label>
+              <input
+                type="text"
+                className="input-modal"
+                value={customerName}
+                onChange={(e) => setCustomerName(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>เบอร์โทรศัพท์</label>
+              <input
+                type="text"
+                className="input-modal"
+                value={customerPhone}
+                onChange={(e) => setCustomerPhone(e.target.value)}
+                required
+              />
+            </div>
+          </div>
+          <div>
+            <label>ที่อยู่</label>
+            <input
+              type="text"
+              className="input-modal"
+              value={customerAddress}
+              onChange={(e) => setCustomerAddress(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-full">
+              <label>เลขบัตรประชาชน</label>
+              <input
+                type="text"
+                className="input-modal"
+                value={cardId}
+                onChange={(e) => setCardId(e.target.value)}
+                required
+              />
+            </div>
+            <div className="w-full">
+              <label>เพศ</label>
+              <select
+                className="input-modal"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+              >
+                <option value="">เลือกเพศ</option>
+                <option value="male">ชาย</option>
+                <option value="female">หญิง</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <div>เงินมัดจำ</div>
+            <input
+              type="number"
+              className="input-modal"
+              value={deposit}
+              onChange={(e) => setDeposit(Number(e.target.value))}
+              required
+            />
+          </div>
+          <div className="flex gap-2">
+            <div className="w-full">
+              <div>วันที่เข้าพัก</div>
+              <input
+                type="date"
+                className="input-modal"
+                value={dayjs(stayAt).format("YYYY-MM-DD")}
+                onChange={(e) => setStayAt(new Date(e.target.value))}
+                required
+              />
+            </div>
+            <div className="w-full">
+              <div>วันที่ออก</div>
+              <div className="flex gap-1">
+                <input
+                  type="date"
+                  className="input-modal"
+                  value={stayTo ? dayjs(stayTo).format("YYYY-MM-DD") : ""}
+                  onChange={(e) => setStayTo(new Date(e.target.value))}
+                  required
+                />
+                <Button
+                  type="button"
+                  className="w-30 mt-2"
+                  variant="destructive"
+                  onClick={() => setStayTo(null)}
+                >
+                  ไม่กำหนด
+                </Button>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div>หมายเหตุ</div>
+            <input
+              type="text"
+              className="input-modal"
+              value={remark}
+              onChange={(e) => setRemark(e.target.value)}
+            />
+          </div>
+          <div>
+            <Button type="submit" variant="default" className="mt-3">
+              <i className="fa-solid fa-floppy-disk mr-2"></i>
+              บันทึก
+            </Button>
+          </div>
         </form>
       </Modal>
     </div>

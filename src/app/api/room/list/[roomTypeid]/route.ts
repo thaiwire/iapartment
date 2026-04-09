@@ -2,27 +2,25 @@
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/libs/prisma";
-import { z } from "zod";
+
+export const dynamic = "force-dynamic";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ roomTypeid: string }> },
 ) {
-  const { roomTypeid } = await params;
-
-  console.log("Received roomTypeid:", roomTypeid);
-
-  const rooms = await prisma.room.findMany({
-    orderBy: { name: "asc" },
-    include: { roomType: true },
-    where: {
-      // status: "active",
-      roomTypeId: roomTypeid,
-    },
-  });
-  return NextResponse.json(rooms);
-
   try {
+    const { roomTypeid } = await params;
+
+    const rooms = await prisma.room.findMany({
+      orderBy: { name: "asc" },
+      include: { roomType: true, bookings: true },
+      where: {
+        roomTypeId: roomTypeid,
+      },
+    });
+
+    return NextResponse.json(rooms);
   } catch (error) {
     return NextResponse.json(
       { error: (error as Error)?.message || "Failed to fetch rooms" },
